@@ -1,0 +1,112 @@
+cd ICON
+
+# model_type:
+#   "pifu"            reimplemented PIFu
+#   "pamir"           reimplemented PaMIR
+#   "icon-filter"     ICON w/ global encoder (continous local wrinkles)
+#   "icon-nofilter"   ICON w/o global encoder (correct global pose)
+#   "icon-keypoint"   ICON w/ relative-spatial encoding (insight from KeypointNeRF)
+
+python -m apps.infer -cfg ./configs/icon-filter.yaml -gpu 0 -in_dir ./examples -out_dir ./results -loop_smpl 100 -loop_cloth 200 -hps_type pymaf
+
+python -m apps.infer -cfg ./configs/icon-nofilter.yaml -gpu 0 -in_dir ./examples -out_dir ./results -loop_smpl 100 -loop_cloth 200 -hps_type pymaf
+
+python -m apps.infer -cfg ./configs/pifu.yaml -gpu 0 -in_dir ./examples -out_dir ./results -loop_smpl 100 -loop_cloth 200 -hps_type pymaf
+
+python -m apps.infer -cfg ./configs/pifu_N.yaml -gpu 0 -in_dir ./examples -out_dir ./results -loop_smpl 1 -loop_cloth 1 -hps_type pymaf
+
+python -m apps.infer -cfg ./configs/pamir.yaml -gpu 0 -in_dir ./test_image1 -out_dir ./results -loop_smpl 1 -loop_cloth 1 -hps_type pymaf
+
+python -m apps.infer -cfg ./configs/pamir_N.yaml -gpu 0 -in_dir ./test_image1 -out_dir ./results -loop_smpl 1 -loop_cloth 1 -hps_type pymaf
+
+python -m apps.infer -cfg ./configs/refine-pifu.yaml -gpu 0 -in_dir ./test_image -out_dir ./results -loop_smpl 1 -loop_cloth 1 -hps_type pymaf
+
+python -m apps.infer -cfg ./configs/high-refine-pifu.yaml -gpu 0 -in_dir ./examples/test -out_dir ./results -loop_smpl 1 -loop_cloth 1 -hps_type pymaf
+
+
+=========================>>>>>>>
+
+
+# visualization for SMPL-X mesh
+python -m lib.dataloader_demo -v -c ./configs/train/icon-filter.yaml
+
+# visualization for voxelized SMPL
+python -m lib.dataloader_demo -v -c ./configs/train/pamir.yaml
+
+
+conda activate icon
+
+# model_type: 
+#   "pifu"            reimplemented PIFu
+#   "pamir"           reimplemented PaMIR
+#   "icon-filter"     ICON w/ global encoder (continous local wrinkles)
+#   "icon-nofilter"   ICON w/o global encoder (correct global pose)
+#   "icon-mvp"        minimal viable product, simple yet efficient
+
+# Training for implicit MLP
+CUDA_VISIBLE_DEVICES=0 python -m apps.train -cfg ./configs/train/icon-filter.yaml
+
+CUDA_VISIBLE_DEVICES=0 python -m apps.train -cfg ./configs/train/refine-pifu.yaml
+
+CUDA_VISIBLE_DEVICES=0 python -m apps.train -cfg ./configs/train/pamir.yaml
+
+# Training for normal network
+CUDA_VISIBLE_DEVICES=0 python -m apps.train-normal -cfg ./configs/train/normal.yaml
+
+
+
+
+===============================
+
+python -m lib.dataloader_demo -v -c ./configs/train/icon-filter.yaml -d cape
+
+python -m lib.dataloader_demo -v -c ./configs/train/refine-pifu.yaml -d cape
+
+conda activate icon
+
+# model_type: 
+#   "pifu"            reimplemented PIFu
+#   "pamir"           reimplemented PaMIR
+#   "icon-filter"     ICON w/ global encoder (continous local wrinkles)
+#   "icon-nofilter"   ICON w/o global encoder (correct global pose)
+
+python -m apps.train -cfg ./configs/train/icon-filter.yaml -test
+
+python -m apps.train -cfg ./configs/train/icon-nofilter.yaml -test
+
+python -m apps.train -cfg ./configs/train/refine-pifu.yaml -test
+
+python -m apps.train -cfg ./configs/train/high-refine-pifu.yaml -test
+
+python -m apps.train -cfg ./configs/train/pamir.yaml -test
+
+python -m apps.train -cfg ./configs/train/pifu.yaml -test
+
+# TIP: reduce "mcube_res" as 128 in apps/train.py for faster evaluation
+
+
+
+===================********* Metrics ************==========================
+
+late fused
+{'cape-easy-chamfer': tensor(1.1866, device='cuda:0'), 
+'cape-easy-p2s': tensor(0.9913, device='cuda:0'), 
+'cape-easy-NC': tensor(0.0813, device='cuda:0'),
+'cape-hard-chamfer': tensor(1.3984, device='cuda:0'), 
+'cape-hard-p2s': tensor(1.1782, device='cuda:0'), 
+'cape-hard-NC': tensor(0.0843, device='cuda:0'), 
+'cape-chamfer': tensor(1.2370, device='cuda:0'), 
+'cape-p2s': tensor(1.0253, device='cuda:0'), 
+'cape-NC': tensor(0.0806, device='cuda:0')}
+
+early fused
+{'cape-easy-chamfer': tensor(1.0985, device='cuda:0'), 
+'cape-easy-p2s': tensor(0.9105, device='cuda:0'), 
+'cape-easy-NC': tensor(0.0749, device='cuda:0'), 
+'cape-hard-chamfer': tensor(1.2773, device='cuda:0'), 
+'cape-hard-p2s': tensor(1.0420, device='cuda:0'),
+'cape-hard-NC': tensor(0.0776, device='cuda:0'), 
+'cape-chamfer': tensor(1.1470, device='cuda:0'), 
+'cape-p2s': tensor(0.9439, device='cuda:0'), 
+'cape-NC': tensor(0.0753, device='cuda:0')}
+
