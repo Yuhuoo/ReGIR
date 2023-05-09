@@ -1,7 +1,8 @@
 name: high-refine-pifu
 ckpt_dir: "./data/ckpt/"
 resume_path: "./data/ckpt/refine-pifu/epoch=09.ckpt"
-high_resume_path: "./data/ckpt/high-refine-pifu/epoch=06.ckpt"
+high_resume_path: "./data/ckpt/high-refine-pifu/epoch=03.ckpt"
+# high_resume_path: "./data/ckpt/high-refine-pifu/epoch=06.ckpt"
 normal_path: "./data/ckpt/normal.ckpt"
 
 test_mode: True
